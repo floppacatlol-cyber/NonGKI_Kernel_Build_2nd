@@ -1,4 +1,4 @@
-name: Build Samsung Galaxy A71 (OneUI A16)
+name: Build Samsung Galaxy A32 5G (OneUI A13)
 
 on:
   workflow_call:
