@@ -6,14 +6,14 @@ on:
 
 env:
   # Device env
-  DEVICE_NAME : "samsung_a71"
-  DEVICE_CODENAME : "a71"
+  DEVICE_NAME : "samsung_a32"
+  DEVICE_CODENAME : "a32x"
 
   CUSTOM_CMDS : "CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu-"
   EXTRA_CMDS : "LLVM=1 LLVM_IAS=1 CC=clang LD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++"
 
-  KERNEL_SOURCE : "https://github.com/nduykha/kernel_samsung_sm7150.git"
-  KERNEL_BRANCH : "paradigm"
+  KERNEL_SOURCE : "https://github.com/Yenping0001/android_kernel_samsung_a326b"
+  KERNEL_BRANCH : "a32x-kernel"
 
   CLANG_SOURCE : "https://github.com/nduykha/kernel_samsung_sm7150/releases/download/clang/llvm.tar.xz"
   CLANG_BRANCH : ""
@@ -25,7 +25,7 @@ env:
   GCC_32_BRANCH : ""
 
   DEFCONFIG_SOURCE: ""
-  DEFCONFIG_NAME : "sdmmagpie_defconfig"
+  DEFCONFIG_NAME : "rufnx_defconfig"
   DEFCONFIG_ORIGIN_IMAGE: ""
   DEFCONFIG_FROM_BOOT: false
 
@@ -79,19 +79,19 @@ env:
   HIDE_STUFF: "true" # hide some of the features"
 
   GENERATE_DTB: "false" # if u kernel need DTB , but cannot auto generate it. (Only Anykernel3).
-  GENERATE_CHIP: "qcom" # only supported for qcom and mediatek.
+  GENERATE_CHIP: "mediatek" # only supported for qcom and mediatek.
 
   BUILD_DEBUGGER: "false" # Output build errors.
   SKIP_PATCH: "false" # Ignore errors found in Patch Debugger.
 
-  BUILD_OTHER_CONFIG: "true" # Merge config files.
-  MERGE_CONFIG_FILES: "a71.config"
+  BUILD_OTHER_CONFIG: "false" # Merge config files.
+  MERGE_CONFIG_FILES: ""
 
   FREE_MORE_SPACE: "false" # if u want get more space, enabled it.
 
 jobs:
   build-kernel:
-    name: Samsung Galaxy A71 (OneUI A16)
+    name: Samsung Galaxy A32 5G (OneUI A13)
     runs-on: ubuntu-latest # u can changed to ubuntu 22.04, and need container set ubuntu-latest
     # container: archlinux/archlinux:latest # if u need use arch linux -> archlinux/archlinux:latest or ubuntu 20.04 -> ubuntu:focal
     env:
@@ -119,19 +119,8 @@ jobs:
         run: |
           # Only ${{ env.DEVICE_NAME }} use it.
           cd $GITHUB_WORKSPACE/device_kernel
-          sed -i 's/CONFIG_LOCALVERSION="-Paradigm"/CONFIG_LOCALVERSION="-HaoticKernel"/g' arch/arm64/configs/sdmmagpie_defconfig
-          echo "[+] Kernel name has been updated to -HaoticKernel"
           sed -i 's/pids\[PIDTYPE_PID\].pid/thread_pid/g' drivers/kernelsu/kpm/super_access.c
-          sed -i '/CONFIG_DEBUG_KERNEL/d' arch/arm64/configs/sdmmagpie_defconfig
-          sed -i '/CONFIG_KALLSYMS/d' arch/arm64/configs/sdmmagpie_defconfig
-          sed -i '/CONFIG_KALLSYMS_ALL/d' arch/arm64/configs/sdmmagpie_defconfig
-          cat <<EOF >> arch/arm64/configs/sdmmagpie_defconfig
-          CONFIG_DEBUG_KERNEL=y
-          CONFIG_KALLSYMS=y
-          CONFIG_KALLSYMS_ALL=y
-          EOF
           echo "[+] Fixed KPM feature"
-          # Nothing
 
       - name: 🧰 Patch Kernel of Re:Kernel
         uses: ./.github/workflows/patch-rekernel
@@ -144,30 +133,6 @@ jobs:
 
       - name: 🚀 Build Process
         uses: ./.github/workflows/build-process
-
-      - name: 🔍 Verify and Create DTBO Image
-        run: |
-          cd $GITHUB_WORKSPACE/device_kernel
-
-          echo "🔍 Searching for .dtbo files..."
-          # THÊM lệnh find vào đây
-          DTBO_FILES=$(find out/arch/arm64/boot/dts/samsung/ -name "sm*150-sec-a71-eur-overlay-*.dtbo")
-
-          if [ -z "$DTBO_FILES" ]; then
-            echo "❌ No .dtbo files found! Check your build log for dtbs errors."
-            exit 1
-          fi
-
-          echo "📦 Creating dtbo.img..."
-          ./tools/mkdtimg create out/arch/arm64/boot/dtbo.img --page_size=4096 ${DTBO_FILES}
-
-          if [ -f "out/arch/arm64/boot/dtbo.img" ]; then
-            echo "✅ DTBO created successfully at out/arch/arm64/boot/dtbo.img"
-          else
-            echo "❌ DTBO creation failed! Listing files for debug:"
-            find out/ -name "*.img"
-            exit 1
-          fi
 
       - name: 🔩 Pack Process
         uses: ./.github/workflows/pack-process
